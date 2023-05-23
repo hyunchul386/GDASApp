@@ -17,6 +17,10 @@ fi
 if [ ! -e "ufs_input.nc" ]; then
    ln -s ${data}/ocn_da_2021_03_22_08.nc ufs_input.nc
 fi
+#--- input yaml
+if [ ! -f "./testinput/plot_front.yaml" ]; then
+  cp ${srcdir}/test/soca/testinput/plot_front.yaml ./testinput/.
+fi
 python ${srcdir}/ush/soca/plot_front_ufs.py
 re=$?
 export err=$re

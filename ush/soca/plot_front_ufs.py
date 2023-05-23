@@ -11,20 +11,10 @@ import numpy as np
 #import argparse
 import glob
 #import os
-#import yaml
+import yaml
 from datetime import datetime
 
-#-- ufs 5deg test : 
-im = 72      ; jm = 35      ; km = 33
-imm = im - 1 ; jmm = jm - 1 ; kmm = km - 1
-#-- resolution dependent: just any deep ocean point
-ic = 15 ; jc = 15
-#-- resolution dependent: close enough distance in degree
-little=3.0
-#-- reference depth (ref_z) and ref_T
-ref_z = 400 ; ref_T = 12
-
-def IJ_find(lons,lats,Xupper,Xlower,Yupper,Ylower):
+def IJ_find(imm,jmm,lons,lats,Xupper,Xlower,Yupper,Ylower):
     for j in range(jmm):
         if (abs(lats[j,ic]-Ylower) < little):
             jst = j 
@@ -37,7 +27,7 @@ def IJ_find(lons,lats,Xupper,Xlower,Yupper,Ylower):
             ied = i 
     return ist,ied+1,jst,jed+1
 
-def Find_zfactor(z,ref_z):
+def Find_zfactor(kmm,z,ref_z):
     kmmm = kmm - 1 
     for k in range(kmmm):
         if ( z[k] <= ref_z ) and ( z[k+1] > ref_z ):
@@ -47,17 +37,18 @@ def Find_zfactor(z,ref_z):
             ref_k = k
     return z_fac, ref_k
 
-def Find_fields(T,ssh,ist,ied,jst,jed,z_fac, ref_k):
+def Find_fields(im,jm,T,ssh,ist,ied,jst,jed,z_fac, ref_k):
     TC=np.zeros((jm, im,))
     SSH=np.zeros((jm, im,))
-    SSH[jst:jed,ist:ied] = ssh[0,jst:jed,ist:ied]  
+   #SSH[jst:jed,ist:ied] = ssh[0,jst:jed,ist:ied]  
     for i in range(ist,ied+1):
         for j in range(jst,jed+1):
             TC[j,i] = T[0,ref_k,j,i]-(T[0,ref_k,j,i]-T[0,ref_k+1,j,i])*z_fac 
+            SSH[j,i] = ssh[0,j,i]
     return TC, SSH
 
-def plot_world_map(lons, lats, z, T, ssh, ymdh, RG):
-
+def plot_world_map(im,jm,km,ic,jc,little,ref_z,ref_T,lons, lats, z, T, ssh, ymdh, RG):
+    imm = im - 1 ; jmm = jm - 1 ; kmm = km - 1
     if ( RG == 1 ):
     #-- Gulf Stream only
         Xupper = 320 ; Xlower = 278  ; Yupper = 45 ; Ylower = 26
@@ -93,12 +84,13 @@ def plot_world_map(lons, lats, z, T, ssh, ymdh, RG):
 #   ax.add_feature(cfeature.COASTLINE)
 #   ax.add_feature(cfeature.COASTLINE.with_scale('50m'))
 #------
-    ist,ied,jst,jed = IJ_find(lons,lats,Xupper,Xlower,Yupper,Ylower)
+    ist,ied,jst,jed = IJ_find(imm,jmm,lons,lats,Xupper,Xlower,Yupper,Ylower)
 #   print("ist,ied,jst,jed",ist,ied,jst,jed)
-    z_fac, ref_k = Find_zfactor(z,ref_z)
-    TC,SSH = Find_fields(T,ssh,ist,ied,jst,jed,z_fac, ref_k)
+    z_fac, ref_k = Find_zfactor(kmm,z,ref_z)
+    TC,SSH = Find_fields(im,jm,T,ssh,ist,ied,jst,jed,z_fac, ref_k)
 #------
-    cs = plt.contourf(lons[:,:],lats[:,:],ssh[0,:,:],cmap='jet')
+  # cs = plt.contourf(lons[:,:],lats[:,:],ssh[0,:,:],cmap='jet')
+    cs = plt.contourf(lons[:,:],lats[:,:],SSH[:,:],cmap='jet')
     cb = plt.colorbar(cs, orientation='horizontal', shrink=0.5, pad=.04)
     cs = ax.contour(lons[:,:],lats[:,:],TC[:,:], [ref_T], color='darkblue', linewidths=2.5)
    
@@ -125,18 +117,31 @@ def read_var(datapath):
     ymdh = datetime.strptime(str(dates[0]),'%Y-%m-%d %H:%M:%S')
     return lons, lats, z, T, ssh, ymdh
 
-def gen_figure(inpath):
+def gen_figure(inpath,im,jm,km,ic,jc,little,ref_z,ref_T):
    #read the files to get the 2D array to plot
     lons, lats, z, T, ssh, ymdh = read_var(inpath)
     #-- for Gulf Steam
-    plot_world_map(lons, lats, z, T, ssh, ymdh, 1)
+    plot_world_map(im,jm,km,ic,jc,little,ref_z,ref_T,lons, lats, z, T, ssh, ymdh, 1)
     #-- for Kuroshio
-#   plot_world_map(lons, lats, z, T, ssh, ymdh, 2)
+#   plot_world_map(im,jm,km,ic,jc,little,ref_z,ref_T,lons, lats, z, T, ssh, ymdh, 2)
 
 
 if __name__ == "__main__":
 
    input = "./ufs_input.nc"
 
-   gen_figure(input)
+   inpyaml = open("./testinput/plot_front.yaml", 'r')
+   inp = yaml.load(inpyaml, Loader=yaml.FullLoader)
+   im = inp["im"]
+   jm = inp["jm"]
+   km = inp["km"]
+   ic = inp["ic"]
+   jc = inp["jc"]
+   little = inp["little"]
+   ref_z = inp["ref_z"]
+   ref_T = inp["ref_T"]
+
+
+
+   gen_figure(input,im,jm,km,ic,jc,little,ref_z,ref_T)
 

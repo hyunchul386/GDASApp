@@ -1,0 +1,12 @@
+#-- input configs for plot GS front: resolution dependent
+#-- ufs 5deg test :
+im: 72
+jm: 35
+km: 33
+#-- just any deep ocean point
+ic: 15
+jc: 15
+little: 3
+#-- reference depth (ref_z) and Temp (ref_T) for front
+ref_z: 400
+ref_T: 12
