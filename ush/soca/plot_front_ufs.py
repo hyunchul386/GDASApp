@@ -4,6 +4,7 @@ import cartopy.crs as ccrs
 import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
+import matplotlib.ticker as mticker
 import matplotlib.colors as mcolors
 import netCDF4 as nc
 from netCDF4 import Dataset, date2num, num2date
@@ -81,6 +82,10 @@ def plot_world_map(im,jm,km,ic,jc,little,ref_z,ref_T,lons, lats, z, T, ssh, ymdh
     ax.set_extent([float(Xlower), float(Xupper), float(Ylower), float(Yupper)])
 #   ax.coastlines(resolution='10m',zorder=2);
     ax.coastlines();
+    gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
+                  linewidth=2, color='gray', alpha=0.7, linestyle='--')
+    gl.xlocator = mticker.MultipleLocator(5)
+    gl.ylocator = mticker.MultipleLocator(5)
 #   ax.add_feature(cfeature.COASTLINE)
 #   ax.add_feature(cfeature.COASTLINE.with_scale('50m'))
 #------
