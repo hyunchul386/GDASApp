@@ -41,24 +41,32 @@ def Find_zfactor(kmm,z,ref_z):
 def Find_fields(im,jm,T,ssh,ist,ied,jst,jed,z_fac, ref_k):
     TC=np.zeros((jm, im,))
     SSH=np.zeros((jm, im,))
+    SST=np.zeros((jm, im,))
    #SSH[jst:jed,ist:ied] = ssh[0,jst:jed,ist:ied]  
     for i in range(ist,ied+1):
         for j in range(jst,jed+1):
             TC[j,i] = T[0,ref_k,j,i]-(T[0,ref_k,j,i]-T[0,ref_k+1,j,i])*z_fac 
             SSH[j,i] = ssh[0,j,i]
-    return TC, SSH
+            SST[j,i] = T[0,0,j,i]
+    return TC, SSH, SST
 
-def plot_world_map(im,jm,km,ic,jc,little,ref_z,ref_T,lons, lats, z, T, ssh, ymdh, RG):
+def plot_world_map(im,jm,km,ic,jc,little,ref_z,ref_T,lons, lats, z, T, ssh, ymdh, RG, SF):
     imm = im - 1 ; jmm = jm - 1 ; kmm = km - 1
+
+    if ( SF == 1 ):
+        FD = "SSH"
+    elif ( SF == 2 ):
+        FD = "SST"
+
     if ( RG == 1 ):
     #-- Gulf Stream only
         Xupper = 320 ; Xlower = 278  ; Yupper = 45 ; Ylower = 26
-        outfile='./front_output_GS_usf.png'
+        outfile='./front_output_GS_'+FD+'.png'
         RGname='Gulf Stream'
     elif (RG == 2):
     #-- Kuroshio only
         Xupper = 180 ; Xlower = 130 ; Yupper = 46 ; Ylower = 25
-        outfile='./front_output_KS_ufs.png'
+        outfile='./front_output_KS_'+FD+'.png'
         RGname='Kuroshio'
     
 #  #--- Xlower/Xupper [ lons : -280 ~ 80 ]
@@ -92,15 +100,21 @@ def plot_world_map(im,jm,km,ic,jc,little,ref_z,ref_T,lons, lats, z, T, ssh, ymdh
     ist,ied,jst,jed = IJ_find(imm,jmm,lons,lats,Xupper,Xlower,Yupper,Ylower)
 #   print("ist,ied,jst,jed",ist,ied,jst,jed)
     z_fac, ref_k = Find_zfactor(kmm,z,ref_z)
-    TC,SSH = Find_fields(im,jm,T,ssh,ist,ied,jst,jed,z_fac, ref_k)
+    TC,SSH,SST = Find_fields(im,jm,T,ssh,ist,ied,jst,jed,z_fac, ref_k)
 #------
-  # cs = plt.contourf(lons[:,:],lats[:,:],ssh[0,:,:],cmap='jet')
-    cs = plt.contourf(lons[:,:],lats[:,:],SSH[:,:],cmap='jet')
-    cb = plt.colorbar(cs, orientation='horizontal', shrink=0.5, pad=.04)
-    cs = ax.contour(lons[:,:],lats[:,:],TC[:,:], [ref_T], color='darkblue', linewidths=2.5)
-   
-    plttitle = '%s Front and SSH (m) on %s' % (RGname, ymdh)
- 
+    if (SF == 1):
+ #      cs = plt.contourf(lons[:,:],lats[:,:],ssh[0,:,:],cmap='jet')
+        cs = plt.contourf(lons[:,:],lats[:,:],SSH[:,:],cmap='jet')
+        cb = plt.colorbar(cs, orientation='horizontal', shrink=0.5, pad=.04)
+        cs = ax.contour(lons[:,:],lats[:,:],TC[:,:], [ref_T], color='darkblue', linewidths=2.5)
+        plttitle = '%s Front and SSH (m) on %s' % (RGname, ymdh)
+    elif (SF == 2):
+ #      cs = plt.contourf(lons[:,:],lats[:,:],ssh[0,:,:],cmap='jet')
+        cs = plt.contourf(lons[:,:],lats[:,:],SST[:,:],cmap='jet')
+        cb = plt.colorbar(cs, orientation='horizontal', shrink=0.5, pad=.04)
+        cs = ax.contour(lons[:,:],lats[:,:],TC[:,:], [ref_T], color='darkblue', linewidths=2.5)
+        plttitle = '%s Front and SST ($^{o}C$) on %s' % (RGname, ymdh)
+#------
     plt.title(plttitle)
     plt.savefig(outfile)
     plt.close()
@@ -126,9 +140,11 @@ def gen_figure(inpath,im,jm,km,ic,jc,little,ref_z,ref_T):
    #read the files to get the 2D array to plot
     lons, lats, z, T, ssh, ymdh = read_var(inpath)
     #-- for Gulf Steam
-    plot_world_map(im,jm,km,ic,jc,little,ref_z,ref_T,lons, lats, z, T, ssh, ymdh, 1)
+    plot_world_map(im,jm,km,ic,jc,little,ref_z,ref_T,lons, lats, z, T, ssh, ymdh, 1, 1)
+    plot_world_map(im,jm,km,ic,jc,little,ref_z,ref_T,lons, lats, z, T, ssh, ymdh, 1, 2)
     #-- for Kuroshio
-#   plot_world_map(im,jm,km,ic,jc,little,ref_z,ref_T,lons, lats, z, T, ssh, ymdh, 2)
+ #  plot_world_map(im,jm,km,ic,jc,little,ref_z,ref_T,lons, lats, z, T, ssh, ymdh, 2, 1)
+ #  plot_world_map(im,jm,km,ic,jc,little,ref_z,ref_T,lons, lats, z, T, ssh, ymdh, 2, 2)
 
 
 if __name__ == "__main__":
